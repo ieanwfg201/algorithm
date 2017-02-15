@@ -34,9 +34,9 @@ public final class DrawImage {
 //        image.
         Graphics2D graphi = (Graphics2D)image.getGraphics();
         graphi.setBackground(Color.WHITE);
-        graphi.clearRect(0, 0, X_precision, Y_precision);//Í¨¹ıÊ¹ÓÃµ±Ç°»æÍ¼±íÃæµÄ±³¾°É«½øĞĞÌî³äÀ´Çå³ıÖ¸¶¨µÄ¾ØĞÎ¡£
-        graphi.setPaint(Color.BLACK);//ÉèÖÃ»­±Ê,ÉèÖÃPaintÊôĞÔ
-        graphi.setFont(new Font("ËÎÌå", Font.BOLD, FONT_SIZE));
+        graphi.clearRect(0, 0, X_precision, Y_precision);//é€šè¿‡ä½¿ç”¨å½“å‰ç»˜å›¾è¡¨é¢çš„èƒŒæ™¯è‰²è¿›è¡Œå¡«å……æ¥æ¸…é™¤æŒ‡å®šçš„çŸ©å½¢ã€‚
+        graphi.setPaint(Color.BLACK);//è®¾ç½®ç”»ç¬”,è®¾ç½®Paintå±æ€§
+        graphi.setFont(new Font("å®‹ä½“", Font.BOLD, FONT_SIZE));
         this.drawZeroOrMiddlePosition(graphi, xMin, xMax, yMin, yMax);
         //TODO
         drawFunction(graphi, function, xMin,xMax,yMax);

@@ -11,9 +11,12 @@ public class DrawImageTest {
 
     @Test
     public void testDrawImage() throws Exception {
-        DrawImage.instance().drawImage(new Line());
+//        DrawImage.instance().drawImage(new Line());
 
-        testA();
+//        testA();
+
+
+        DrawImage.instance().drawImage(new GaussFunction(1), 10, 10);
     }
 
     private void testA(){
@@ -40,4 +43,18 @@ public class DrawImageTest {
             return 0.5*x+1;
         }
     }
+    public static class Derivative implements DrawImage.DrawImageFunction{
+        public double function(double x) {
+            return 0;
+        }
+    }
+
+    public static class GaussFunction implements DrawImage.DrawImageFunction{
+        private double exp=1;
+        public GaussFunction(double exp){if(exp!=0)this.exp=exp;}
+        public double function(double x) {
+            return Math.exp(-x*x/(2*exp*exp));
+        }
+    }
+
 }

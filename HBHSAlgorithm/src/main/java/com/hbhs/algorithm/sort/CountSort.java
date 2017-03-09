@@ -18,7 +18,7 @@ public class CountSort {
 	 */
 	public static void sort(Integer[] sequenceForArray){
 		int maxValue = sequenceForArray[0], minValue = sequenceForArray[0];
-		// 获取最大和最小值
+		// 1. 获取最大和最小值， 用于创建临时的计数数组
 		for (int i = 1; i < sequenceForArray.length; i++) {
 			if (sequenceForArray[i] < minValue) {
 				minValue = sequenceForArray[i];
@@ -27,17 +27,19 @@ public class CountSort {
 				maxValue = sequenceForArray[i];
 			}
 		}
+		// 2. 创建计数数组
 		int[] countArray = new int[maxValue-minValue+1];
-		// 计数
+		// 3. 迭代待排序数组，做计数操作，这个时候表示的是每一个距离最小值的数在待排序序列中有几次
 		for (int i = 0; i < sequenceForArray.length; i++) {
 			int value = sequenceForArray[i];
 			countArray[value- minValue] += 1;
 		}
-		// 计算每个值所在位置
+		// 4. 依次迭代，计算每个值应当所在位置
 		Integer[] tempArray = new Integer[sequenceForArray.length];
 		for (int i = 0; i < tempArray.length; i++) {
 			tempArray[i] = sequenceForArray[i];
 		}
+		// 5. 做叠加操作
 		for (int i = 1; i < countArray.length; i++) {
 			countArray[i] += countArray[i-1];
 		}

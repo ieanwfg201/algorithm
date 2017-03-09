@@ -28,6 +28,7 @@ public class BinaryTreeSort {
 		// 获取到排序号的Index
 		List<Integer> indexList = new ArrayList<Integer>();
 		getSortedIndexFromTree(indexList, root);
+		// 按照排序好的序列列表重新生成序列
 		sortSequence(sequenceArray, indexList);
 	}
 	/**

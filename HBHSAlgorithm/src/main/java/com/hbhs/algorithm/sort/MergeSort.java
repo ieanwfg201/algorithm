@@ -101,13 +101,10 @@ public class MergeSort {
 				sequenceForSort[k]=(T)rightPart[j];
 				j++;
 			}
-			
 		}
 		//最后leftPart和rightPart有一个未做set值操作，需要将改值设置到原始数组对应的end值中
-		if (i==leftPart.length) {
-			sequenceForSort[end]= (T)rightPart[rightPart.length-1];
-		}else
-			sequenceForSort[end]= (T)leftPart[leftPart.length-1];
+		if (i==leftPart.length) { sequenceForSort[end]= (T)rightPart[rightPart.length-1]; }
+		else sequenceForSort[end]= (T)leftPart[leftPart.length-1];
 	}
 	
 	/**

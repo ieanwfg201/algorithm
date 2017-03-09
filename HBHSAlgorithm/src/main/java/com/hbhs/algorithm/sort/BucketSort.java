@@ -16,400 +16,53 @@ import java.util.List;
  *
  */
 public class BucketSort {
+
 	/**
 	 * 桶排序
-	 * @param sequenceArray
+	 * @param sequenceList
 	 */
-	public static <T extends Comparable<? super T>> void sort(T[] sequenceArray){
-		// 1 初始化待比较的桶数组
-		Object[] bucketArray = initBucket(sequenceArray);
-		
-		// 2 初始化桶数组中的排序号的序列Index
-		Object[] bucketIndexArray = new Object[bucketArray.length];
-		for (int i = 0; i < sequenceArray.length; i++) {
-			insertIntoBucket(bucketArray, bucketIndexArray, sequenceArray, i);
-		}
-		wrapSequenceSorted(sequenceArray, bucketIndexArray);
+	public static void sort(List<Integer> sequenceList){
+		// 1 求取sequence中获取到需要除以的值，返回值为10/100/1000/10000...
+		int divisionValueOfSequence = getDivisionValueOfSequence(sequenceList);
+		// 2 按照除数来计算
+		sort(sequenceList, divisionValueOfSequence);
 	}
-	/**
-	 * 插入当前值
-	 * @param bucketArray
-	 * @param bucketIndexArray
-	 * @param sequenceArray
-	 * @param currentIndex
-	 */
-	@SuppressWarnings("unchecked")
-	private static <T extends Comparable<? super T>> void insertIntoBucket(Object[] bucketArray, Object[] bucketIndexArray,
-			T[] sequenceArray, int currentIndex){
-		T compareValue = sequenceArray[currentIndex];
-		for (int i = bucketArray.length-1; i > 0; i--) {
-			// 比较值 比当前值大，则插入
-			if (bucketArray[i]==null||compareValue.compareTo((T)bucketArray[i])>=0) {
-				// 将sequence插入
-				List<Integer> bucketIndexList = (List<Integer>)bucketIndexArray[i];
-				if (bucketIndexList==null) {
-					bucketIndexList = new ArrayList<Integer>();
-				}
-				bucketIndexList.add(currentIndex);
-				
-				for (int j = bucketIndexList.size()-1; j >0 ; j--) {
-					if (sequenceArray[bucketIndexList.get(j)].compareTo(sequenceArray[bucketIndexList.get(j-1)])<0) {
-						int swapIndex = bucketIndexList.get(j);
-						bucketIndexList.set(j, bucketIndexList.get(j-1));
-						bucketIndexList.set(j-1, swapIndex);
-						break;
-					}
-				}
-				bucketIndexArray[i] = bucketIndexList;
-				break;
+    // 按照指定的数位来排序
+	private static void sort(List<Integer> sequenceList, int divisionValue){
+	    // 1 初始化待比较的桶数组, 类型为List<Integer>, 保存的为序列
+		List<Integer>[] bucketArray = new List[10];
+
+		// 2 迭代待排序序列，并放到对应的桶中
+		for(int value: sequenceList){
+			int index = value/divisionValue%10;  //通过该运算获取到我们需要排序的那一位数字，并放入到对应桶中
+			if (bucketArray[index]==null) bucketArray[index] = new ArrayList<>();
+			bucketArray[index].add(value);
+		}
+		// 4 迭代桶队列，对每一个桶中的数据做排序，我们这里还是采用桶排序(也可以采用其他的排序方式，如插入排序)
+		if (divisionValue>1)
+			for(List<Integer> bucketDataList: bucketArray){
+				if (bucketDataList!=null&&bucketDataList.size()>0) sort(bucketDataList, divisionValue/10);
 			}
+		// 清楚数据，并按照bucket中的重新设置排序好的序列
+		sequenceList.clear();
+		for (List<Integer> list : bucketArray) {
+			if (list!=null&&list.size()>0) sequenceList.addAll(list);
 		}
 	}
-	
-	/**
-	 * 随机初始化桶数据，生成所需比较的桶列表,并做好排序
-	 * @param sequenceArray
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	private static <T extends Comparable<? super T>> Object[] initBucket(T[] sequenceArray){
-		// 生成10个桶 其中第一个桶为空
-		Object[] bucketArray = new Object[10];
-		int bucketIndex = 1, sequenceIndex = 0;
-		// 设置第二个桶的值为带排序的数组第一个值
-		bucketArray[bucketIndex] = sequenceArray[sequenceIndex];
-		// 增加序列
-		bucketIndex++;
-		sequenceIndex++;
-		while(bucketIndex < bucketArray.length){
-			int compare = sequenceArray[sequenceIndex].compareTo((T)bucketArray[bucketIndex-1]);
-			if (compare == 0) {
-				sequenceIndex ++;
-				continue ;
-			}
-			bucketArray[bucketIndex] = sequenceArray[sequenceIndex];
-			
-			// 排序
-			for (int j = bucketIndex; j > 0; j--) {
-				if ((j==1)||(((T)bucketArray[j]).compareTo((T)bucketArray[j-1]) > 0)) {
-					break;
-				}
-				T swap = (T)bucketArray[j];
-				bucketArray[j] = bucketArray[j-1];
-				bucketArray[j-1] = swap;
-			}
-			bucketIndex++;
-			sequenceIndex++;
+
+	private static int getDivisionValueOfSequence(List<Integer> sequenceArray){
+		// 计算待排序中的最大值
+		int max = sequenceArray.get(0);
+		for(int target: sequenceArray){
+			if (target>max) max = target;
 		}
-		
-		return bucketArray;
+		// 求取第一次的除数，只会为10^n
+		int divisionValue = 1;
+		while(max>=10){
+			divisionValue *= 10;
+			max /= 10;
+		}
+		return divisionValue;
 	}
-	
-	/**
-	 * 桶排序
-	 * @param sequenceArray
-	 */
-	public static <T> void sort(T[] sequenceArray, Comparator<T> c){
-		// 1 初始化待比较的桶数组
-		Object[] bucketArray = initBucket(sequenceArray, c);
-		
-		// 2 初始化桶数组中的排序号的序列Index
-		Object[] bucketIndexArray = new Object[bucketArray.length];
-		for (int i = 0; i < sequenceArray.length; i++) {
-			insertIntoBucket(bucketArray, bucketIndexArray, sequenceArray, i, c);
-		}
-		wrapSequenceSorted(sequenceArray, bucketIndexArray);
-	}
-	/**
-	 * 插入当前值
-	 * @param bucketArray
-	 * @param bucketIndexArray
-	 * @param sequenceArray
-	 * @param currentIndex
-	 */
-	@SuppressWarnings("unchecked")
-	private static <T> void insertIntoBucket(Object[] bucketArray, Object[] bucketIndexArray,
-			T[] sequenceArray, int currentIndex, Comparator<T> c){
-		T compareValue = sequenceArray[currentIndex];
-		for (int i = bucketArray.length-1; i > 0; i--) {
-			// 比较值 比当前值大，则插入
-			if (bucketArray[i]==null||c.compare(compareValue, (T)bucketArray[i])>=0) {
-				// 将sequence插入
-				List<Integer> bucketIndexList = (List<Integer>)bucketIndexArray[i];
-				if (bucketIndexList==null) {
-					bucketIndexList = new ArrayList<Integer>();
-				}
-				bucketIndexList.add(currentIndex);
-				
-				for (int j = bucketIndexList.size()-1; j >0 ; j--) {
-					if (c.compare(sequenceArray[bucketIndexList.get(j)], sequenceArray[bucketIndexList.get(j-1)])<0) {
-						int swapIndex = bucketIndexList.get(j);
-						bucketIndexList.set(j, bucketIndexList.get(j-1));
-						bucketIndexList.set(j-1, swapIndex);
-						break;
-					}
-				}
-				bucketIndexArray[i] = bucketIndexList;
-				break;
-			}
-		}
-	}
-	
-	/**
-	 * 随机初始化桶数据，生成所需比较的桶列表,并做好排序
-	 * @param sequenceArray
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	private static <T> Object[] initBucket(T[] sequenceArray, Comparator<T> c){
-		// 生成10个桶 其中第一个桶为空
-		Object[] bucketArray = new Object[10];
-		int bucketIndex = 1, sequenceIndex = 0;
-		// 设置第二个桶的值为带排序的数组第一个值
-		bucketArray[bucketIndex] = sequenceArray[sequenceIndex];
-		// 增加序列
-		bucketIndex++;
-		sequenceIndex++;
-		while(bucketIndex < bucketArray.length){
-			int compare = c.compare(sequenceArray[sequenceIndex], (T)bucketArray[bucketIndex-1]);
-			if (compare == 0) {
-				sequenceIndex ++;
-				continue ;
-			}
-			bucketArray[bucketIndex] = sequenceArray[sequenceIndex];
-			
-			// 排序
-			for (int j = bucketIndex; j > 0; j--) {
-				if ((j==1)||c.compare((T)bucketArray[j], (T)bucketArray[j-1])> 0) {
-					break;
-				}
-				T swap = (T)bucketArray[j];
-				bucketArray[j] = bucketArray[j-1];
-				bucketArray[j-1] = swap;
-			}
-			bucketIndex++;
-			sequenceIndex++;
-		}
-		
-		return bucketArray;
-	}
-	
-	/**
-	 * 桶排序
-	 * @param sequenceArray
-	 */
-	public static <T extends Comparable<? super T>> void sort(List<T> sequenceArray){
-		// 1 初始化待比较的桶数组
-		Object[] bucketArray = initBucket(sequenceArray);
-		
-		// 2 初始化桶数组中的排序号的序列Index
-		Object[] bucketIndexArray = new Object[bucketArray.length];
-		for (int i = 0; i < sequenceArray.size(); i++) {
-			insertIntoBucket(bucketArray, bucketIndexArray, sequenceArray, i);
-		}
-		wrapSequenceSorted(sequenceArray, bucketIndexArray);
-	}
-	/**
-	 * 插入当前值
-	 * @param bucketArray
-	 * @param bucketIndexArray
-	 * @param sequenceArray
-	 * @param currentIndex
-	 */
-	@SuppressWarnings("unchecked")
-	private static <T extends Comparable<? super T>> void insertIntoBucket(Object[] bucketArray, Object[] bucketIndexArray,
-			List<T> sequenceArray, int currentIndex){
-		T compareValue = sequenceArray.get(currentIndex);
-		for (int i = bucketArray.length-1; i > 0; i--) {
-			// 比较值 比当前值大，则插入
-			if (bucketArray[i]==null||compareValue.compareTo((T)bucketArray[i])>=0) {
-				// 将sequence插入
-				List<Integer> bucketIndexList = (List<Integer>)bucketIndexArray[i];
-				if (bucketIndexList==null) {
-					bucketIndexList = new ArrayList<Integer>();
-				}
-				bucketIndexList.add(currentIndex);
-				
-				for (int j = bucketIndexList.size()-1; j >0 ; j--) {
-					if (sequenceArray.get(bucketIndexList.get(j)).compareTo(sequenceArray.get(bucketIndexList.get(j-1)))<0) {
-						int swapIndex = bucketIndexList.get(j);
-						bucketIndexList.set(j, bucketIndexList.get(j-1));
-						bucketIndexList.set(j-1, swapIndex);
-						break;
-					}
-				}
-				bucketIndexArray[i] = bucketIndexList;
-				break;
-			}
-		}
-	}
-	
-	/**
-	 * 随机初始化桶数据，生成所需比较的桶列表,并做好排序
-	 * @param sequenceArray
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	private static <T extends Comparable<? super T>> Object[] initBucket(List<T> sequenceArray){
-		// 生成10个桶 其中第一个桶为空
-		Object[] bucketArray = new Object[10];
-		int bucketIndex = 1, sequenceIndex = 0;
-		// 设置第二个桶的值为带排序的数组第一个值
-		bucketArray[bucketIndex] = sequenceArray.get(sequenceIndex);
-		// 增加序列
-		bucketIndex++;
-		sequenceIndex++;
-		while(bucketIndex < bucketArray.length){
-			int compare = sequenceArray.get(sequenceIndex).compareTo((T)bucketArray[bucketIndex-1]);
-			if (compare == 0) {
-				sequenceIndex ++;
-				continue ;
-			}
-			bucketArray[bucketIndex] = sequenceArray.get(sequenceIndex);
-			
-			// 排序
-			for (int j = bucketIndex; j > 0; j--) {
-				if ((j==1)||(((T)bucketArray[j]).compareTo((T)bucketArray[j-1]) > 0)) {
-					break;
-				}
-				T swap = (T)bucketArray[j];
-				bucketArray[j] = bucketArray[j-1];
-				bucketArray[j-1] = swap;
-			}
-			bucketIndex++;
-			sequenceIndex++;
-		}
-		
-		return bucketArray;
-	}
-	
-	/**
-	 * 桶排序
-	 * @param sequenceArray
-	 */
-	public static <T> void sort(List<T> sequenceArray, Comparator<T> c){
-		// 1 初始化待比较的桶数组
-		Object[] bucketArray = initBucket(sequenceArray, c);
-		
-		// 2 初始化桶数组中的排序号的序列Index
-		Object[] bucketIndexArray = new Object[bucketArray.length];
-		for (int i = 0; i < sequenceArray.size(); i++) {
-			insertIntoBucket(bucketArray, bucketIndexArray, sequenceArray, i, c);
-		}
-		wrapSequenceSorted(sequenceArray, bucketIndexArray);
-	}
-	/**
-	 * 插入当前值
-	 * @param bucketArray
-	 * @param bucketIndexArray
-	 * @param sequenceArray
-	 * @param currentIndex
-	 */
-	@SuppressWarnings("unchecked")
-	private static <T> void insertIntoBucket(Object[] bucketArray, Object[] bucketIndexArray,
-			List<T> sequenceArray, int currentIndex, Comparator<T> c){
-		T compareValue = sequenceArray.get(currentIndex);
-		for (int i = bucketArray.length-1; i > 0; i--) {
-			// 比较值 比当前值大，则插入
-			if (bucketArray[i]==null||c.compare(compareValue, (T)bucketArray[i])>=0) {
-				// 将sequence插入
-				List<Integer> bucketIndexList = (List<Integer>)bucketIndexArray[i];
-				if (bucketIndexList==null) {
-					bucketIndexList = new ArrayList<Integer>();
-				}
-				bucketIndexList.add(currentIndex);
-				
-				for (int j = bucketIndexList.size()-1; j >0 ; j--) {
-					if (c.compare(sequenceArray.get(bucketIndexList.get(j)), sequenceArray.get(bucketIndexList.get(j-1)))<0) {
-						int swapIndex = bucketIndexList.get(j);
-						bucketIndexList.set(j, bucketIndexList.get(j-1));
-						bucketIndexList.set(j-1, swapIndex);
-						break;
-					}
-				}
-				bucketIndexArray[i] = bucketIndexList;
-				break;
-			}
-		}
-	}
-	
-	/**
-	 * 随机初始化桶数据，生成所需比较的桶列表,并做好排序
-	 * @param sequenceArray
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	private static <T> Object[] initBucket(List<T> sequenceArray, Comparator<T> c){
-		// 生成10个桶 其中第一个桶为空
-		Object[] bucketArray = new Object[10];
-		int bucketIndex = 1, sequenceIndex = 0;
-		// 设置第二个桶的值为带排序的数组第一个值
-		bucketArray[bucketIndex] = sequenceArray.get(sequenceIndex);
-		// 增加序列
-		bucketIndex++;
-		sequenceIndex++;
-		while(bucketIndex < bucketArray.length){
-			int compare = c.compare(sequenceArray.get(sequenceIndex), (T)bucketArray[bucketIndex-1]);
-			if (compare == 0) {
-				sequenceIndex ++;
-				continue ;
-			}
-			bucketArray[bucketIndex] = sequenceArray.get(sequenceIndex);
-			
-			// 排序
-			for (int j = bucketIndex; j > 0; j--) {
-				if ((j==1)||c.compare((T)bucketArray[j], (T)bucketArray[j-1])> 0) {
-					break;
-				}
-				T swap = (T)bucketArray[j];
-				bucketArray[j] = bucketArray[j-1];
-				bucketArray[j-1] = swap;
-			}
-			bucketIndex++;
-			sequenceIndex++;
-		}
-		
-		return bucketArray;
-	}
-	
-	/**
-	 * 将待排序数组按照指定的排序序列重新排序
-	 * @param sequenceArray
-	 * @param bucketIndexList
-	 */
- 	@SuppressWarnings("unchecked")
-	private static <T> void wrapSequenceSorted(T[] sequenceArray, Object[] bucketIndexList){
-		List<Object> tempList = new ArrayList<Object>();
-		for (int i = 0; i < bucketIndexList.length; i++) {
-			List<Integer> bucketList = (List<Integer>)bucketIndexList[i];
-			if (bucketList!=null&&bucketList.size()>0) {
-				for (int j = 0; j < bucketList.size(); j++) {
-					tempList.add(sequenceArray[bucketList.get(j)]);
-				}
-			}
-		}
-		for (int i = 0; i < tempList.size(); i++) {
-			sequenceArray[i] = (T)tempList.get(i);
-		}
-	}
- 	/**
-	 * 将待排序数组按照指定的排序序列重新排序
-	 * @param sequenceArray
-	 * @param bucketIndexList
-	 */
- 	@SuppressWarnings("unchecked")
-	private static <T> void wrapSequenceSorted(List<T> sequenceArray, Object[] bucketIndexList){
-		List<Object> tempList = new ArrayList<Object>();
-		for (int i = 0; i < bucketIndexList.length; i++) {
-			List<Integer> bucketList = (List<Integer>)bucketIndexList[i];
-			if (bucketList!=null&&bucketList.size()>0) {
-				for (int j = 0; j < bucketList.size(); j++) {
-					tempList.add(sequenceArray.get(bucketList.get(j)));
-				}
-			}
-		}
-		for (int i = 0; i < tempList.size(); i++) {
-			sequenceArray.set(i, (T)tempList.get(i));
-		}
-	}
+
 }

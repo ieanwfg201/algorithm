@@ -5,7 +5,7 @@ import java.util.*;
 
 /**
  * Created by walter.xu on 2017/2/9.
- *
+ * TODO 未实现
  */
 public class RBFNeuralNetClassifier<T extends RBFNeuralNetClassifier.RBFData> {
     private DecimalFormat df = new DecimalFormat("0.000");
@@ -107,9 +107,7 @@ public class RBFNeuralNetClassifier<T extends RBFNeuralNetClassifier.RBFData> {
     private void calculateHiddenLevelWidthInfo(float[] attributes){
         for(int i=0;i<hiddenLevel.nodeList.size();i++){
             RBFHiddenNode hidden = (RBFHiddenNode)hiddenLevel.nodeList.get(i);
-            for(int j=0;j<attributes.length;j++){
-                hidden.widthVector[j] -= (hidden.centerParameterVector[j] - attributes[j])*WIDTH_ADJUST_PARAMETER;
-            }
+            hidden.widthRatio(eta, attributes);
         }
     }
 
@@ -122,7 +120,9 @@ public class RBFNeuralNetClassifier<T extends RBFNeuralNetClassifier.RBFData> {
         // 计算并设置hidden level的output值, 通过eta函数计算
         for(int i=0;i<hiddenLevel.nodeList.size();i++){
             RBFHiddenNode node = (RBFHiddenNode) hiddenLevel.nodeList.get(i);
-            node.outputValue = rbfFunction(node,eta);
+//            node.outputValue = rbfFunction(node,eta);
+            node.widthRatio(eta, attributes);
+            node.outputValue = node.rbfFunction(attributes,1);
         }
         // 计算output level的output值
         for(int i=0;i<outputLevel.nodeList.size();i++){
@@ -142,25 +142,23 @@ public class RBFNeuralNetClassifier<T extends RBFNeuralNetClassifier.RBFData> {
             if (type.equals(node.type)) node.error = 1 - node.outputValue;
             else node.error = -1 - node.outputValue;
         }
-        // 计算hidden level的相关参数
-//        calculateHiddenLevelWeightInfo();
-//        calculateHiddenLevelCenterParameterInfo();
-//        calculateHiddenLevelWidthInfo(attributes);
         for(int i=0;i<hiddenLevel.nodeList.size();i++){
             RBFHiddenNode node = (RBFHiddenNode)hiddenLevel.nodeList.get(i);
-            for(int j=0;j<node.centerParameterVector.length;j++){
 
-            }
         }
     }
 
-    /**
-     * RBF函数，采用高斯分布
-     * @param node hidden level node
-     * @param eta 变量
-     * @return result
-     */
-    private float rbfFunction(RBFHiddenNode node, float eta){
+    private void adjustHiddenData(float eta2){
+        //TODO
+    }
+
+//    /**
+//     * RBF函数，采用高斯分布
+//     * @param node hidden level node
+//     * @param eta 变量
+//     * @return result
+//     */
+    /*private float rbfFunction(RBFHiddenNode node, float eta){
         float widthRatio = node.widthRatio(eta);
         float total = 0;
         for(int i=0; i<inputLevel.nodeList.size();i++){
@@ -168,7 +166,7 @@ public class RBFNeuralNetClassifier<T extends RBFNeuralNetClassifier.RBFData> {
                     *(inputLevel.nodeList.get(i).outputValue-node.centerParameterVector[i]);
         }
         return (float)Math.exp(-total/(widthRatio*widthRatio));
-    }
+    }*/
 
 
     private static class DataLevel {
@@ -215,23 +213,65 @@ public class RBFNeuralNetClassifier<T extends RBFNeuralNetClassifier.RBFData> {
         }
     }
     private static class RBFHiddenNode extends RBFNode{
-        float[] widthVector;                 // 宽度向量
+//        float[] widthVector;                 // 宽度向量
+        float widthExtendParameter;          // 径向基函数的扩展常数或宽度，改值越小，径向基函数的宽度越小，否则，宽度越大
         float[] centerParameterVector;       // 中心参数向量
         float[] hiddenOutputWeigthVector;
         public RBFHiddenNode(String nodeName, int inputNodeCount, int outputNodeCount){
             super(nodeName);
-            widthVector = new float[inputNodeCount];
+//            widthVector = new float[inputNodeCount];
             centerParameterVector=new float[inputNodeCount];
             hiddenOutputWeigthVector = new float[outputNodeCount];
         }
-        public float widthRatio(float eta){
-            float widthRatio = 0;
-            for(float width: widthVector){
-                widthRatio = width*width;
+
+        public void widthRatio(float eta, float[] attributeArray){
+            float total = 0;
+            for(int i=0; i<attributeArray.length;i++){
+                total = eta*(centerParameterVector[i]-attributeArray[i])*(centerParameterVector[i]-attributeArray[i]);
             }
-            widthRatio /= widthVector.length;
-            return (float)(eta*Math.sqrt(widthRatio));
+            total /= attributeArray.length;
+            this.widthExtendParameter = (float)(eta*Math.sqrt(total));
         }
+
+        /**
+         * 三种方式：其中A(r)表示以r为自变量的函数，r为变量，表示欧式距离，o为宽展参数，又称宽度参数
+         * 1. Gauss(高斯函数)：A(r) = exp(-r*r/(2*o*o))
+         * 2. 反演S型函数：A(r) = 1/(1+exp(r*r/(o*o)))
+         * 3. 拟多二次函数：A(r) = 1/(r*r+o*o)[1/2]
+         * @param attributeArray 单样本数据属性列表
+         * @param type 类型：1：高斯函数，2：反演S型函数,3: 拟多二次函数，其他值默认为使用1：高斯函数
+         * @return rbf结果值
+         */
+        public float rbfFunction(float[] attributeArray, int type){
+            // 获取到欧式距离
+            float distance = euclideanDistance(attributeArray);
+            if (type==2) return rbf2(distance, widthExtendParameter);
+            else if (type == 3) return rbf3(distance, widthExtendParameter);
+            else return rbfGauss(distance, widthExtendParameter);
+        }
+        private float rbfGauss(float distance, float widths){
+            return (float)Math.exp(-distance*distance/(widths*widths*2));
+        }
+        private float rbf2(float distance, float widths){
+            return (float)(1.0/(1+Math.exp(distance*distance/(widths*widths))));
+        }
+        private float rbf3(float distance, float widths){
+            return (float) (1.0 / Math.sqrt(distance*distance +widths*widths));
+        }
+
+        /**
+         * 求取欧式距离. 计算结果为: (a1-a2)*(a1-a2)+(b1-b2)*(b1-b2)+(c1-ac)*(c1-c2)+...
+         * @return 欧式距离结果
+         */
+        public float euclideanDistance(float[] attributeArray){
+            float total = 0;
+            for(int i=0;i<attributeArray.length;i++){
+                total += (attributeArray[i]-centerParameterVector[i])*(attributeArray[i]-centerParameterVector[i]);
+            }
+            return total;
+        }
+
+
     }
 
     public interface RBFData{
@@ -261,12 +301,6 @@ public class RBFNeuralNetClassifier<T extends RBFNeuralNetClassifier.RBFData> {
                 str.append("[").append(df.format(hidden.centerParameterVector[0]));
                 for(int i=1;i<hidden.centerParameterVector.length;i++){
                     str.append(",").append(df.format(hidden.centerParameterVector[i]));
-                }
-                str.append("]").append(space(5));
-
-                str.append("[").append(df.format(hidden.widthVector[0]));
-                for(int i=1;i<hidden.widthVector.length;i++){
-                    str.append(",").append(df.format(hidden.widthVector[i]));
                 }
                 str.append("]").append(space(5));
 

@@ -16,7 +16,7 @@ public class DrawImageTest {
 //        testA();
 
 
-        DrawImage.instance().drawImage(new GaussFunction(1), 10, 10);
+        DrawImage.instance().drawImage(new SelfFunction(), 10, 10);
     }
 
     private void testA(){
@@ -54,6 +54,12 @@ public class DrawImageTest {
         public GaussFunction(double exp){if(exp!=0)this.exp=exp;}
         public double function(double x) {
             return Math.exp(-x*x/(2*exp*exp));
+        }
+    }
+
+    public static class SelfFunction implements DrawImage.DrawImageFunction{
+        public double function(double x) {
+            return 1.0/(Math.exp(-x)+1);
         }
     }
 
